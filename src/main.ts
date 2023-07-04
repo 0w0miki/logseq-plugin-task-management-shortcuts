@@ -46,39 +46,35 @@ async function main() {
   initSettings();
 
   const keyBindings = getSettings('keyBindings', {});
-  const tasks = getSettings('tasks', []);
+  let tasks: string[] = getSettings('tasks', []).map((task: string) => `${task} `);
   const regx = new RegExp(`^(${tasks.join('|')})`, 'gm');
+  tasks = ['', ...tasks];
 
-  async function updateBlock(block: BlockEntity | null, taskBindedId: number) {
+  async function updateBlock(block: BlockEntity | null, mark: string) {
     if (!block?.uuid) {
       return;
     }
     let content = regx.test(block.content)
       ? block.content.replace(regx, '').trimStart()
       : block.content;
-    if (taskBindedId > 0) {
-      content = `${tasks[taskBindedId - 1]} ${content}`;
-    }
+
+    content = `${mark}${content}`;
     await logseq.Editor.updateBlock(block.uuid, content);
   }
 
-  async function setTask(taskBoundId: number) {
-    if (tasks.length < taskBoundId) {
-      return;
-    }
-
+  async function setTask(mark: string) {
     const selected = await logseq.Editor.getSelectedBlocks();
     if (selected && selected?.length > 1) {
       for (let block of selected) {
-        await updateBlock(block, taskBoundId);
+        await updateBlock(block, mark);
       }
     } else {
       const block = await logseq.Editor.getCurrentBlock();
-      await updateBlock(block, taskBoundId);
+      await updateBlock(block, mark);
     }
   }
 
-  for (let taskBoundId of Array(tasks.length + 1).keys()) {
+  tasks.forEach((mark, taskBoundId) => {
     logseq.App.registerCommandPalette(
       {
         key: `task-management-shortcuts-task-${taskBoundId}`,
@@ -89,10 +85,10 @@ async function main() {
         },
       },
       async () => {
-        await setTask(taskBoundId);
+        await setTask(mark);
       }
     );
-  }
+  });
 }
 
 logseq.ready(main).catch(console.error);
