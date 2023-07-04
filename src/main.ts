@@ -78,11 +78,11 @@ async function main() {
     logseq.App.registerCommandPalette(
       {
         key: `task-management-shortcuts-task-${taskBoundId}`,
-        label: `Set block to task ${taskBoundId}`,
-        keybinding: {
+        label: `Set block to task state ${mark}`,
+        keybinding: keyBindings[taskBoundId] ? {
           mode: 'global',
-          binding: keyBindings[taskBoundId] || 'ctrl+' + taskBoundId,
-        },
+          binding:  keyBindings[taskBoundId],
+        } : undefined,
       },
       async () => {
         await setTask(mark);
